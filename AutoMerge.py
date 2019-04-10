@@ -27,9 +27,24 @@ def get_frames(start: int, end:int, filepath: str) -> List[np.ndarray]:
     return out
 
 
-frames: List[np.ndarray] = get_frames(455, 460, 'Test/red_blue_test.avi')
-cv.namedWindow('frame', cv.WINDOW_NORMAL)
-for f in frames:
-    cv.imshow('frame', f)
-    cv.waitKey()
-cv.destroyAllWindows()
+def find_matching_frames(lead_vid_path: str, following_vid_paths: List[str]) -> List[Tuple[int, int]]:
+    return []
+
+
+def get_image_difference(img_1: np.ndarray, img_2: np.ndarray, method: str = '') -> float:
+    return 0.0
+
+
+def main():
+    #frames: List[np.ndarray] = get_frames(455, 460, 'Test/red_blue_test.avi')
+    frames: List[np.ndarray] = get_frames(4000, 5000, 'Test/m.mkv')
+    cv.namedWindow('frame', cv.WINDOW_NORMAL)
+    for f in frames:
+        cv.imshow('frame', f)
+        k = cv.waitKey(0) & 0xFF
+        if k == 27:
+            break
+    cv.destroyAllWindows()
+
+
+main()
