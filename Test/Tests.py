@@ -19,7 +19,7 @@ def generate_red_blue_test_file() -> None:
     fourcc: int = cv.VideoWriter_fourcc(*'XVID') # Video format
     font: int = cv.FONT_HERSHEY_SIMPLEX
     number_of_frames: int = 500
-    frames_per_second: int = 20.0
+    frames_per_second: float = 20.0
 
     # Init video writer
     out: cv.VideoWriter = cv.VideoWriter('red_blue_test.avi', fourcc, frames_per_second, (640, 480))
@@ -36,7 +36,7 @@ def generate_red_blue_test_file() -> None:
     out.release()
 
 
-# Generates two video files, a blue video with a red 485th frame, and a second green video with a red 15th frame
+# Generates two video files, a blue video with a red frame 485, and a second green video with a red frame 15
 def generate_red_frame_test_files() -> None:
 
     # Generate colored images
