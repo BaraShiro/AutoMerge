@@ -10,6 +10,7 @@ class App:
 
         # Variables to be passed to find_matching_frames
         self.colour = BooleanVar()
+        self.resize = BooleanVar()
         self.mode = StringVar()
         self.seconds = IntVar()
 
@@ -61,6 +62,9 @@ class App:
         self.colour_check = Checkbutton(self.options_frame, text="Colour", variable=self.colour)
         self.colour_check.grid(row=0, column=0)
 
+        self.resize_check = Checkbutton(self.options_frame, text="Downscale", variable=self.resize)
+        self.resize_check.grid(row=0, column=1)
+
         Label(self.options_frame, text="Algorithm:").grid(row=1, column=0, sticky=NW)
 
         self.mse_radio_button = Radiobutton(self.options_frame, text="MSE", variable=self.mode, value="mse")
@@ -84,15 +88,16 @@ class App:
 
     def browse_lead(self):
         file_path = filedialog.askopenfilename(title="Select file",
-                                                   filetypes=(("Video files", "*.avi *.mp4 *.mkv"), ("all files", "*.*")))
+                                                   filetypes=(("Video files", "*.avi *.mp4 *m4v *.mkv *.mov"), ("All files", "*.*")))
         self.lead_entry.configure(state='normal')
         self.lead_entry.delete(0, END)
         self.lead_entry.insert(0, file_path)
         self.lead_entry.configure(state='readonly')
 
+    # TODO: Fix bug, adds empty line when canceling browse (check if filepath is "")
     def browse_following(self):
         file_path = filedialog.askopenfilename(title="Select file",
-                                                   filetypes=(("Video files", "*.avi *.mp4 *.mkv"), ("all files", "*.*")))
+                                                   filetypes=(("Video files", "*.avi *.mp4 *m4v *.mkv *.mov"), ("All files", "*.*")))
         self.following_listbox.insert(END, file_path)
 
     def go(self):
@@ -115,7 +120,8 @@ class App:
 
         # TODO: Put in try block to catch exceptions (wrong filetype, non existing file, etc.)
         result = find_matching_frames(leading_vid, following_vids, seconds=self.seconds.get(),
-                                      multichannel=self.colour.get(), method=self.mode.get())
+                                      multichannel=self.colour.get(), downscale=self.resize.get(),
+                                      method=self.mode.get())
         print(result)  # TODO: present result in a better way. Maybe write to file?
         return
 
