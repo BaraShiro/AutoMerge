@@ -1,24 +1,47 @@
-import sys
 import os
 from typing import *
 import numpy as np
 import cv2 as cv
 from skimage.measure import compare_mse, compare_nrmse, compare_psnr, compare_ssim
-from matplotlib import pyplot as plt
+from skimage.transform import resize
+from skimage import img_as_ubyte
+import warnings
 import time
 from joblib import Parallel, delayed
 
 
+# Resizes an image to the new with, keeping the aspect ratio
+def resize_image(image: np.ndarray, new_width: int = 640) -> np.ndarray:
+    height: int = image.shape[0]
+    width: int = image.shape[1]
+    scale: float = new_width / width
+    new_height: int = int(height * scale)
+    new_image: np.ndarray = resize(image, (new_height, new_width), anti_aliasing=True)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")  # Don't warn about loss of precision
+        new_image = img_as_ubyte(new_image)  # resize() returns dtype float64, so covert back to uint8
+    return new_image
+
+
+
 # Gets frames from start to end from video at filepath and returns the in a list
-def get_frames(start: int, number_of_frames_to_read: int, video: cv.VideoCapture, multichannel: bool = True) -> List[np.ndarray]:
+def get_frames(start: int, number_of_frames_to_read: int, video: cv.VideoCapture,
+               multichannel: bool = True, downscale: bool = False) -> List[np.ndarray]:
     # Init variables
     out: List[np.ndarray] = []
     video.set(cv.CAP_PROP_POS_FRAMES, start)  # Jump to start frame
+
+    if downscale:
+        print("Resizing", number_of_frames_to_read, "frames")
 
     # Read frames from the file, if reading the frame is successful append it to the list, else stop reading frames
     for x in range(number_of_frames_to_read):
         success, frame = video.read()
         if success:
+
+            if downscale:
+                frame = resize_image(frame)
+
             if multichannel:
                 out.append(frame)
             else:
@@ -32,16 +55,19 @@ def get_frames(start: int, number_of_frames_to_read: int, video: cv.VideoCapture
 
 # Finds the most similar frames in the end of the lead vid and the beginning of the following vid
 def find_matching_frames(lead_vid_path: str, following_vids_paths: List[str], seconds: int = 3,
-                         multichannel: bool = True,  method: str = 'mse') -> List[Tuple[int, int, float]]:
+                         multichannel: bool = True, downscale: bool = False, method: str = 'mse') -> List[Tuple[int, int, float]]:
     # TODO: catch file not found exceptions
     # TODO: check for seconds longer that video length
+    start = time.time()
+
     # Get lead video
     capture: cv.VideoCapture = cv.VideoCapture(lead_vid_path)
     number_of_frames: int = int(capture.get(cv.CAP_PROP_FRAME_COUNT))
     fps: int = int(capture.get(cv.CAP_PROP_FPS))
     number_of_frames_to_read: int = fps * seconds
     lead_vid_start: int = number_of_frames - number_of_frames_to_read
-    lead_vid: List[np.ndarray] = get_frames(lead_vid_start, number_of_frames_to_read, capture, multichannel)
+    print("Getting", number_of_frames_to_read, "leading frames")
+    lead_vid: List[np.ndarray] = get_frames(lead_vid_start, number_of_frames_to_read, capture, multichannel, downscale)
     capture.release()
 
     # Get following videos
@@ -50,7 +76,8 @@ def find_matching_frames(lead_vid_path: str, following_vids_paths: List[str], se
         capture: cv.VideoCapture = cv.VideoCapture(path)
         fps: int = int(capture.get(cv.CAP_PROP_FPS))
         number_of_frames_to_read: int = fps * seconds
-        following_vids.append(get_frames(0, number_of_frames_to_read, capture, multichannel))
+        print("Getting", number_of_frames_to_read, "following frames")
+        following_vids.append(get_frames(0, number_of_frames_to_read, capture, multichannel, downscale))
         capture.release()
 
     # Calculate most similar frames
@@ -59,6 +86,9 @@ def find_matching_frames(lead_vid_path: str, following_vids_paths: List[str], se
         most_similar_frames: Tuple[int, int, float] = get_most_similar_frames(lead_vid, following_vid,
                                                                               lead_vid_start, multichannel, method)
         out.append(most_similar_frames)
+
+    end = time.time()
+    print('Time elapsed:', end - start)
 
     return out
 
@@ -89,7 +119,6 @@ def run_ssim(lead_frame: np.ndarray, following_frame: np.ndarray,
 
 def get_most_similar_frames(lead_vid: List[np.ndarray], following_vid: List[np.ndarray],
                                offset: int, multichannel: bool = True, method: str = 'mse') -> (int, int, float):
-    start = time.time()
 
     number_of_jobs: int = os.cpu_count()  # Try to set number of jobs to the number of available CPUs
     if not number_of_jobs:  # If os.cpu_count() failed and returned None
@@ -106,8 +135,6 @@ def get_most_similar_frames(lead_vid: List[np.ndarray], following_vid: List[np.n
                 if diff[2] < min_diff[2]:
                     min_diff = diff
 
-            end = time.time()
-        print('Time elapsed:', end - start)
         return min_diff
 
     elif method == 'nrmse':
@@ -121,8 +148,6 @@ def get_most_similar_frames(lead_vid: List[np.ndarray], following_vid: List[np.n
                 if diff[2] < min_diff[2]:
                     min_diff = diff
 
-            end = time.time()
-        print('Time elapsed:', end - start)
         return min_diff
 
     elif method == 'psnr':
@@ -136,8 +161,6 @@ def get_most_similar_frames(lead_vid: List[np.ndarray], following_vid: List[np.n
                 if diff[2] > min_diff[2]:
                     min_diff = diff
 
-            end = time.time()
-        print('Time elapsed:', end - start)
         return min_diff
 
     elif method == 'ssim':
@@ -151,8 +174,6 @@ def get_most_similar_frames(lead_vid: List[np.ndarray], following_vid: List[np.n
                 if diff[2] > min_diff[2]:
                     min_diff = diff
 
-            end = time.time()
-        print('Time elapsed:', end - start)
         return min_diff
 
     else:
