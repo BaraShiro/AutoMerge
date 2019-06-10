@@ -54,8 +54,9 @@ def get_frames(start: int, number_of_frames_to_read: int, video: cv.VideoCapture
 
 
 # Finds the most similar frames in the end of the lead vid and the beginning of the following vid
-def find_matching_frames(lead_vid_path: str, following_vids_paths: List[str], seconds: int = 3,
-                         multichannel: bool = True, downscale: bool = False, method: str = 'mse') -> List[Tuple[int, int, float]]:
+def find_matching_frames(lead_vid_path: str, following_vids_paths: List[str], seconds: int,
+                         multichannel: bool = True, downscale: bool = False,
+                         method: str = 'mse') -> List[Tuple[int, int, float]]:
     # TODO: catch file not found exceptions
     # TODO: check for seconds longer that video length
     start = time.time()
