@@ -121,7 +121,7 @@ class App:
         # TODO: Put in try block to catch exceptions (wrong filetype, non existing file, etc.)
         result = find_matching_frames(leading_vid, following_vids, seconds=self.seconds.get(),
                                       multichannel=self.colour.get(), downscale=self.resize.get(),
-                                      method=self.mode.get())
+                                      method=self.mode.get(), verbose=3)
         print(result)  # TODO: present result in a better way. Maybe write to file?
         return
 
