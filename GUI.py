@@ -89,16 +89,19 @@ class App:
     def browse_lead(self):
         file_path = filedialog.askopenfilename(title="Select file",
                                                    filetypes=(("Video files", "*.avi *.mp4 *m4v *.mkv *.mov"), ("All files", "*.*")))
-        self.lead_entry.configure(state='normal')
-        self.lead_entry.delete(0, END)
-        self.lead_entry.insert(0, file_path)
-        self.lead_entry.configure(state='readonly')
 
-    # TODO: Fix bug, adds empty line when canceling browse (check if filepath is "")
+        if file_path:  # file_path will be the empty string if the user cancels the dialog window
+            self.lead_entry.configure(state='normal')       # Make entry writeable
+            self.lead_entry.delete(0, END)                  # Delete entire string
+            self.lead_entry.insert(0, file_path)            # Put file_path as the string
+            self.lead_entry.configure(state='readonly')     # Make entry read only again
+
     def browse_following(self):
         file_path = filedialog.askopenfilename(title="Select file",
                                                    filetypes=(("Video files", "*.avi *.mp4 *m4v *.mkv *.mov"), ("All files", "*.*")))
-        self.following_listbox.insert(END, file_path)
+
+        if file_path:  # file_path will be the empty string if the user cancels the dialog window
+            self.following_listbox.insert(END, file_path)
 
     def go(self):
         leading_vid = self.lead_entry.get()
