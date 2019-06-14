@@ -10,7 +10,7 @@ import time
 from joblib import Parallel, delayed
 
 
-# Resizes an image to the new with, keeping the aspect ratio
+# Resizes an image to the new width, keeping the aspect ratio
 def resize_image(image: np.ndarray, new_width: int = 640) -> np.ndarray:
     height: int = image.shape[0]
     width: int = image.shape[1]
@@ -53,15 +53,21 @@ def get_frames(start: int, number_of_frames_to_read: int, video: cv.VideoCapture
 
 
 # Finds the most similar frames in the end of the lead vid and the beginning of the following vid
+# Verbose: 0 = nothing, 1 = stage of operation, 2 = threading and time, 3 = detailed processing
+# Returns None if video file cannot be opened
 def find_matching_frames(lead_vid_path: str, following_vids_paths: List[str], seconds: int,
                          multichannel: bool = True, downscale: bool = False,
-                         method: str = 'mse', verbose: int = 0) -> List[Tuple[int, int, float]]:
-    # TODO: catch file not found exceptions
-    # TODO: check for seconds longer that video length
+                         method: str = 'mse', verbose: int = 0) -> Union[List[Tuple[int, int, float]], None]:
     start = time.time()
 
     # Get lead video
     capture: cv.VideoCapture = cv.VideoCapture(lead_vid_path)
+
+    if not capture.isOpened():
+        print("Error opening video file at", lead_vid_path)
+        print("Make sure it exists, is a valid video file, and appropriate codecs are installed.")
+        return None
+
     number_of_frames: int = int(capture.get(cv.CAP_PROP_FRAME_COUNT))
     fps: int = int(capture.get(cv.CAP_PROP_FPS))
     number_of_frames_to_read: int = fps * seconds
@@ -77,6 +83,12 @@ def find_matching_frames(lead_vid_path: str, following_vids_paths: List[str], se
     following_vids: List[List[np.ndarray]] = []
     for path in following_vids_paths:
         capture: cv.VideoCapture = cv.VideoCapture(path)
+
+        if not capture.isOpened():
+            print("Error opening video file at", path)
+            print("Make sure it exists, is a valid video file, and appropriate codecs are installed.")
+            return None
+
         fps: int = int(capture.get(cv.CAP_PROP_FPS))
         number_of_frames_to_read: int = fps * seconds
 
@@ -220,4 +232,4 @@ def get_most_similar_frames(lead_vid: List[np.ndarray], following_vid: List[np.n
 # maogray = cv.imread('Test/maogray.png')
 # err = mean_square_error(mao, maogray)
 # print(err)
-#print(find_matching_frames('Test/red_frame_test_1.avi', ['Test/red_frame_test_2.avi'], seconds=1, multichannel=False, method='psnr'))
+# print("result", find_matching_frames('Test/red_frame_test_1.avi', ['Test/red_frame_test_2.avi'], seconds=1, multichannel=False, method='psnr'))
