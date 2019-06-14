@@ -25,12 +25,12 @@ def resize_image(image: np.ndarray, new_width: int = 640) -> np.ndarray:
 
 # Gets frames from start to end from video at filepath and returns the in a list
 def get_frames(start: int, number_of_frames_to_read: int, video: cv.VideoCapture,
-               multichannel: bool = True, downscale: bool = False) -> List[np.ndarray]:
+               multichannel: bool = True, downscale: bool = False, verbose: int = 0) -> List[np.ndarray]:
     # Init variables
     out: List[np.ndarray] = []
     video.set(cv.CAP_PROP_POS_FRAMES, start)  # Jump to start frame
 
-    if downscale:
+    if downscale and verbose >= 1:
         print("Resizing", number_of_frames_to_read, "frames")
 
     # Read frames from the file, if reading the frame is successful append it to the list, else stop reading frames
@@ -76,7 +76,7 @@ def find_matching_frames(lead_vid_path: str, following_vids_paths: List[str], se
     if verbose >= 1:
         print("Getting", number_of_frames_to_read, "leading frames")
 
-    lead_vid: List[np.ndarray] = get_frames(lead_vid_start, number_of_frames_to_read, capture, multichannel, downscale)
+    lead_vid: List[np.ndarray] = get_frames(lead_vid_start, number_of_frames_to_read, capture, multichannel, downscale, verbose)
     capture.release()
 
     # Get following videos
@@ -95,7 +95,7 @@ def find_matching_frames(lead_vid_path: str, following_vids_paths: List[str], se
         if verbose >= 1:
             print("Getting", number_of_frames_to_read, "following frames")
 
-        following_vids.append(get_frames(0, number_of_frames_to_read, capture, multichannel, downscale))
+        following_vids.append(get_frames(0, number_of_frames_to_read, capture, multichannel, downscale, verbose))
         capture.release()
 
     # Calculate most similar frames
@@ -232,4 +232,4 @@ def get_most_similar_frames(lead_vid: List[np.ndarray], following_vid: List[np.n
 # maogray = cv.imread('Test/maogray.png')
 # err = mean_square_error(mao, maogray)
 # print(err)
-# print("result", find_matching_frames('Test/red_frame_test_1.avi', ['Test/red_frame_test_2.avi'], seconds=1, multichannel=False, method='psnr'))
+# print("result", find_matching_frames('Test/red_frame_test_1.avi', ['Test/red_frame_test_2.avi'], seconds=1, multichannel=False, method='psnr', downscale=True, verbose=1))
