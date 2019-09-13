@@ -31,7 +31,7 @@ def get_frames(start: int, number_of_frames_to_read: int, video: cv.VideoCapture
     video.set(cv.CAP_PROP_POS_FRAMES, start)  # Jump to start frame
 
     if downscale and verbose >= 1:
-        print("Resizing", number_of_frames_to_read, "frames")
+        print("Resizing", number_of_frames_to_read, "frames...")
 
     # Read frames from the file, if reading the frame is successful append it to the list, else stop reading frames
     for x in range(number_of_frames_to_read):
@@ -71,10 +71,10 @@ def find_matching_frames(lead_vid_path: str, following_vids_paths: List[str], se
     number_of_frames: int = int(capture.get(cv.CAP_PROP_FRAME_COUNT))
     fps: int = int(capture.get(cv.CAP_PROP_FPS))
     number_of_frames_to_read: int = fps * seconds
-    lead_vid_start: int = number_of_frames - number_of_frames_to_read
+    lead_vid_start: int = number_of_frames - number_of_frames_to_read - 1
 
     if verbose >= 1:
-        print("Getting", number_of_frames_to_read, "leading frames")
+        print("Getting", number_of_frames_to_read, "leading frames...")
 
     lead_vid: List[np.ndarray] = get_frames(lead_vid_start, number_of_frames_to_read, capture, multichannel, downscale, verbose)
     capture.release()
@@ -93,7 +93,7 @@ def find_matching_frames(lead_vid_path: str, following_vids_paths: List[str], se
         number_of_frames_to_read: int = fps * seconds
 
         if verbose >= 1:
-            print("Getting", number_of_frames_to_read, "following frames")
+            print("Getting", number_of_frames_to_read, "following frames...")
 
         following_vids.append(get_frames(0, number_of_frames_to_read, capture, multichannel, downscale, verbose))
         capture.release()
@@ -153,7 +153,7 @@ def get_most_similar_frames(lead_vid: List[np.ndarray], following_vid: List[np.n
         with Parallel(n_jobs=number_of_jobs, prefer="threads") as parallel:
             for i, lead_frame in enumerate(lead_vid):
                 if verbose >= 3:
-                    print("Processing frame", i, "of", len(lead_vid) - 1)
+                    print("Processing frame", i + 1, "of", len(lead_vid))
                 diff_list: List[Tuple[int, int, float]] = (parallel(delayed(run_mse)(lead_frame, following_frame, i + offset, j)
                                                                     for j, following_frame in enumerate(following_vid)))
                 diff: Tuple[int, int, float] = min(diff_list, key=lambda diff_tuple: diff_tuple[2])
