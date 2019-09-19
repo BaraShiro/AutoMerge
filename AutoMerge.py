@@ -30,16 +30,12 @@ def get_frames(start: int, number_of_frames_to_read: int, video: cv.VideoCapture
     out: List[np.ndarray] = []
     video.set(cv.CAP_PROP_POS_FRAMES, start)  # Jump to start frame
 
-    if downscale and verbose >= 1:
-        print("Resizing", number_of_frames_to_read, "frames...")
+
 
     # Read frames from the file, if reading the frame is successful append it to the list, else stop reading frames
     for x in range(number_of_frames_to_read):
         success, frame = video.read()
         if success:
-
-            if downscale:
-                frame = resize_image(frame)
 
             if multichannel:
                 out.append(frame)
@@ -49,7 +45,21 @@ def get_frames(start: int, number_of_frames_to_read: int, video: cv.VideoCapture
         else:
             break
 
-    return out
+    if downscale:
+
+        number_of_jobs: int = os.cpu_count()  # Try to set number of jobs to the number of available CPUs.
+        if not number_of_jobs:  # If os.cpu_count() failed and returned None,
+            number_of_jobs = 4  # default to 4 jobs, as that's good enough
+
+        if verbose >= 1:
+            print("Resizing", number_of_frames_to_read, "frames, using", number_of_jobs, "threads...")
+
+        with Parallel(n_jobs=number_of_jobs, prefer="threads") as parallel:
+            resized_out = (parallel(delayed(resize_image)(frame, 480) for frame in out))
+
+        return resized_out
+    else:
+        return out
 
 
 # Finds the most similar frames in the end of the lead vid and the beginning of the following vid
@@ -146,7 +156,7 @@ def get_most_similar_frames(lead_vid: List[np.ndarray], following_vid: List[np.n
         number_of_jobs = 4                  # default to 4 jobs, as that's good enough
 
     if verbose >= 2:
-        print("Using", number_of_jobs, "threads")
+        print("Processing", len(lead_vid), "frames, using", number_of_jobs, "threads...")
 
     if method == 'mse':
         min_diff: Tuple[int, int, float] = (0, 0, float('inf'))
