@@ -19,7 +19,7 @@ def resize_image(image: np.ndarray, new_width: int = 640) -> np.ndarray:
     new_image: np.ndarray = resize(image, (new_height, new_width), anti_aliasing=True)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")         # Don't warn about loss of precision
-        new_image = img_as_ubyte(new_image)     # resize() returns dtype float64, so covert back to uint8
+        new_image = img_as_ubyte(new_image)     # resize() returns dtype float64, so convert back to uint8
     return new_image
 
 
