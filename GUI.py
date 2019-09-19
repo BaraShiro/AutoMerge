@@ -18,45 +18,50 @@ class App:
         self.main = Frame(window, padx=10, pady=10)
         self.main.grid(row=0, column=0)
 
-        # The file selection frame
-        self.files_frame = LabelFrame(self.main, text="Files", padx=5, pady=5)
-        self.files_frame.grid(row=0, column=0, sticky=NW)
+        # The leading file selection frame
+        self.leading_file_frame = LabelFrame(self.main, text="Leading file", padx=5, pady=5)
+        self.leading_file_frame.grid(row=0, column=0, sticky=NW+E)
 
-        Frame(self.main, width=10, padx=10, pady=10).grid(row=0, column=1)  # Separator
+        # Separator
+        Frame(self.main, height=10, padx=10, pady=10).grid(row=1, column=1)
+
+        # The following file selection frame
+        self.following_files_frame = LabelFrame(self.main, text="Following files", padx=5, pady=5)
+        self.following_files_frame.grid(row=2, column=0, sticky=NW)
+
+        # Separator
+        Frame(self.main, width=10, padx=10, pady=10).grid(row=0, column=1)
 
         # The options frame
         self.options_frame = LabelFrame(self.main, text="Options", padx=5, pady=5)
-        self.options_frame.grid(row=0, column=2, sticky=NW)
+        self.options_frame.grid(row=0, column=2, rowspan=3, sticky=NW)
 
         # The go button
         self.go = Button(self.main, text="Go!", width=10, command=self.go)
-        self.go.grid(row=1, column=2, sticky=NE)
+        self.go.grid(row=3, column=2, sticky=NE)
 
-        # Widgets that go into the file selection frame
-        Label(self.files_frame, text="Leading:").grid(row=0, column=0, sticky=W)
+        # Widgets that go into the leading file selection frame
+        self.lead_entry = Entry(self.leading_file_frame, width=100, state='readonly')
+        self.lead_entry.grid(row=0, column=0)
 
-        self.lead_entry = Entry(self.files_frame, width=100, state='readonly')
-        self.lead_entry.grid(row=1, column=0)
+        self.lead_add_button = Button(self.leading_file_frame, text="...", width=3, command=self.browse_lead)
+        self.lead_add_button.grid(row=0, column=1, padx=5, pady=5, sticky=NW)
 
-        self.lead_add_button = Button(self.files_frame, text="...", width=3, command=self.browse_lead)
-        self.lead_add_button.grid(row=1, column=2, padx=5, pady=5, sticky=NW)
+        # Widgets that go into the following files selection frame
+        self.following_scrollbar = Scrollbar(self.following_files_frame, orient=VERTICAL)
+        self.following_scrollbar.grid(row=0, column=1, rowspan=3, sticky=N+S)
 
-        Label(self.files_frame, text="Following:").grid(row=2, column=0, sticky=NW)
-
-        self.following_scrollbar = Scrollbar(self.files_frame, orient=VERTICAL)
-        self.following_scrollbar.grid(row=3, column=1, rowspan=3, sticky=N+S)
-
-        self.following_listbox = Listbox(self.files_frame, selectmode=SINGLE, width=100, yscrollcommand=self.following_scrollbar.set)
-        self.following_listbox.grid(row=3, column=0, rowspan=3)
+        self.following_listbox = Listbox(self.following_files_frame, selectmode=SINGLE, width=100, yscrollcommand=self.following_scrollbar.set)
+        self.following_listbox.grid(row=0, column=0, rowspan=3)
 
         self.following_scrollbar.config(command=self.following_listbox.yview)  # Connect the scrollbar to the listbox
 
-        self.following_add_button = Button(self.files_frame, text="+", width=3, command=self.browse_following)
-        self.following_add_button.grid(row=3, column=2, padx=5, pady=5, sticky=NW)
+        self.following_add_button = Button(self.following_files_frame, text="+", width=3, command=self.browse_following)
+        self.following_add_button.grid(row=0, column=2, padx=5, pady=5, sticky=NW)
 
-        self.following_sub_button = Button(self.files_frame, text="-", width=3,
+        self.following_sub_button = Button(self.following_files_frame, text="-", width=3,
                                            command=lambda sub=self.following_listbox: self.following_listbox.delete(ANCHOR))
-        self.following_sub_button.grid(row=4, column=2, padx=5, pady=5, sticky=NW)
+        self.following_sub_button.grid(row=1, column=2, padx=5, pady=5, sticky=NW)
 
         # Widgets that go into the options frame
         self.colour_check = Checkbutton(self.options_frame, text="Colour", variable=self.colour)
