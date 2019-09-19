@@ -10,12 +10,12 @@ import time
 from joblib import Parallel, delayed
 
 
-# Resizes an image to the new width, keeping the aspect ratio
-def resize_image(image: np.ndarray, new_width: int = 640) -> np.ndarray:
+# Resizes an image to the new height, keeping the aspect ratio
+def resize_image(image: np.ndarray, new_height: int = 480) -> np.ndarray:
     height: int = image.shape[0]
     width: int = image.shape[1]
-    scale: float = new_width / width
-    new_height: int = int(height * scale)
+    scale: float = new_height / height
+    new_width: int = int(width * scale)
     new_image: np.ndarray = resize(image, (new_height, new_width), anti_aliasing=True)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")         # Don't warn about loss of precision
