@@ -67,7 +67,22 @@ def get_frames(start: int, number_of_frames_to_read: int, video: cv.VideoCapture
 def find_matching_frames(lead_vid_path: str, following_vids_paths: List[str], seconds: int,
                          multichannel: bool = True, downscale: bool = False,
                          method: str = 'mse', verbose: int = 0) -> Union[List[Tuple[int, int, float]], None]:
-    
+
+    if verbose >= 1:
+        arg_message = "Processing " + str(seconds) + " seconds. Using " + method.upper()
+
+        if multichannel:
+            arg_message += ", color"
+        else:
+            arg_message += ", grayscale"
+
+        if downscale:
+            arg_message += ", and downscaling"
+        else:
+            arg_message += ", and original resolution"
+
+        print(arg_message)
+
     start: float = time.time()
 
     # Get lead video
