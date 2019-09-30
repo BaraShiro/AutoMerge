@@ -31,8 +31,6 @@ def get_frames(start: int, number_of_frames_to_read: int, video: cv.VideoCapture
     out: List[np.ndarray] = []
     video.set(cv.CAP_PROP_POS_FRAMES, start)  # Jump to start frame
 
-
-
     # Read frames from the file, if reading the frame is successful append it to the list, else stop reading frames
     for x in range(number_of_frames_to_read):
         success, frame = video.read()
@@ -69,7 +67,8 @@ def get_frames(start: int, number_of_frames_to_read: int, video: cv.VideoCapture
 def find_matching_frames(lead_vid_path: str, following_vids_paths: List[str], seconds: int,
                          multichannel: bool = True, downscale: bool = False,
                          method: str = 'mse', verbose: int = 0) -> Union[List[Tuple[int, int, float]], None]:
-    start = time.time()
+    
+    start: float = time.time()
 
     # Get lead video
     capture: cv.VideoCapture = cv.VideoCapture(lead_vid_path)
@@ -117,7 +116,7 @@ def find_matching_frames(lead_vid_path: str, following_vids_paths: List[str], se
                                                                               method, verbose)
         out.append(most_similar_frames)
 
-    end = time.time()
+    end: float = time.time()
     if verbose >= 2:
         print('Time elapsed:', str(datetime.timedelta(seconds=(end - start))))
 
@@ -218,29 +217,3 @@ def get_most_similar_frames(lead_vid: List[np.ndarray], following_vid: List[np.n
     else:
         print("Invalid method, defaulting to MSE")
         return get_most_similar_frames(lead_vid, following_vid, offset, multichannel, 'mse')
-
-
-# def main():
-#     # capture: cv.VideoCapture = cv.VideoCapture('Test/red_blue_test.avi')
-#     # frames: List[np.ndarray] = get_frames(455, 460, capture)
-#     capture: cv.VideoCapture = cv.VideoCapture('Test/m.mkv')
-#     frames: List[np.ndarray] = get_frames(4000, 5000, capture)
-#     capture.release()
-#     cv.namedWindow('frame', cv.WINDOW_NORMAL)
-#     for f in frames:
-#         cv.imshow('frame', f)
-#         k = cv.waitKey(0) & 0xFF
-#         if k == 27:
-#             break
-#
-#     cv.destroyAllWindows()
-
-
-# main()
-# print(find_matching_frames('Test/red_frame_test_1.avi', ['Test/red_frame_test_2.avi'], seconds=2, multichannel=False, method='mse'))
-# print(find_matching_frames('Test/m.mkv', ['Test/m.mkv']))
-# mao = cv.imread('Test/mao.jpg')
-# maogray = cv.imread('Test/maogray.png')
-# err = mean_square_error(mao, maogray)
-# print(err)
-# print("result", find_matching_frames('Test/red_frame_test_1.avi', ['Test/red_frame_test_2.avi'], seconds=1, multichannel=False, method='psnr', downscale=True, verbose=1))
