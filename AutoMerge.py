@@ -7,6 +7,7 @@ from skimage.transform import resize
 from skimage import img_as_ubyte
 import warnings
 import time
+import datetime
 from joblib import Parallel, delayed
 
 
@@ -118,7 +119,7 @@ def find_matching_frames(lead_vid_path: str, following_vids_paths: List[str], se
 
     end = time.time()
     if verbose >= 2:
-        print('Time elapsed:', end - start)
+        print('Time elapsed:', str(datetime.timedelta(seconds=(end - start))))
 
     return out
 
