@@ -192,7 +192,7 @@ def get_most_similar_frames(lead_vid: List[np.ndarray], following_vid: List[np.n
         with Parallel(n_jobs=number_of_jobs, prefer="threads") as parallel:
             for i, lead_frame in enumerate(lead_vid):
                 if verbose >= 3:
-                    print("Processing frame", i, "of", len(lead_vid) - 1)
+                    print("Processing frame", i + 1, "of", len(lead_vid))
                 diff_list: List[Tuple[int, int, float]] = (parallel(delayed(run_nrmse)(lead_frame, following_frame, i + offset, j)
                                                                     for j, following_frame in enumerate(following_vid)))
                 diff: Tuple[int, int, float] = min(diff_list, key=lambda diff_tuple: diff_tuple[2])
@@ -206,7 +206,7 @@ def get_most_similar_frames(lead_vid: List[np.ndarray], following_vid: List[np.n
         with Parallel(n_jobs=number_of_jobs, prefer="threads") as parallel:
             for i, lead_frame in enumerate(lead_vid):
                 if verbose >= 3:
-                    print("Processing frame", i, "of", len(lead_vid) - 1)
+                    print("Processing frame", i + 1, "of", len(lead_vid))
                 diff_list: List[Tuple[int, int, float]] = (parallel(delayed(run_psnr)(lead_frame, following_frame, i + offset, j)
                                                                     for j, following_frame in enumerate(following_vid)))
                 diff: Tuple[int, int, float] = max(diff_list, key=lambda diff_tuple: diff_tuple[2])
@@ -220,7 +220,7 @@ def get_most_similar_frames(lead_vid: List[np.ndarray], following_vid: List[np.n
         with Parallel(n_jobs=number_of_jobs, prefer="threads") as parallel:
             for i, lead_frame in enumerate(lead_vid):
                 if verbose >= 3:
-                    print("Processing frame", i, "of", len(lead_vid) - 1)
+                    print("Processing frame", i + 1, "of", len(lead_vid))
                 diff_list: List[Tuple[int, int, float]] = (parallel(delayed(run_ssim)(lead_frame, following_frame, i + offset, j, multichannel=multichannel)
                                                                     for j, following_frame in enumerate(following_vid)))
                 diff: Tuple[int, int, float] = max(diff_list, key=lambda diff_tuple: diff_tuple[2])
