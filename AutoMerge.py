@@ -146,7 +146,7 @@ def run_mse(lead_frame: np.ndarray, following_frame: np.ndarray,
 
 def run_nrmse(lead_frame: np.ndarray, following_frame: np.ndarray,
               lead_frame_number: int, following_frame_number: int) -> Tuple[int, int, float]:
-    score: float = compare_nrmse(lead_frame, following_frame)
+    score: float = compare_nrmse(lead_frame, following_frame, norm_type="min-max")
     return lead_frame_number, following_frame_number, score
 
 
@@ -158,7 +158,8 @@ def run_psnr(lead_frame: np.ndarray, following_frame: np.ndarray,
 
 def run_ssim(lead_frame: np.ndarray, following_frame: np.ndarray,
              lead_frame_number: int, following_frame_number: int, multichannel: bool = True) -> Tuple[int, int, float]:
-    score: float = compare_ssim(lead_frame, following_frame, multichannel=multichannel)
+    score: float = compare_ssim(lead_frame, following_frame, multichannel=multichannel,
+                                gaussian_weights=True, use_sample_covariance=False, sigma=1.5)  # Match the implementation of Wang et. al.
     return lead_frame_number, following_frame_number, score
 
 
