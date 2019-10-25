@@ -1,10 +1,13 @@
 from typing import *
 import numpy as np
 import cv2 as cv
+import os
 from AutoMerge import get_frames
+from skimage.measure import compare_ssim
 
 
-def stitch_videos(fst_vid_path: str, snd_vid_path: str,
+
+def stitch_videos(fst_vid_path: str, snd_vid_path: str, out_path: str,
                   fst_stitch_frame: int, snd_stitch_frame: int,
                   fst_seconds: int, snd_seconds: int) -> None:
     fst_capture: cv.VideoCapture = cv.VideoCapture(fst_vid_path)
@@ -26,10 +29,17 @@ def stitch_videos(fst_vid_path: str, snd_vid_path: str,
     fst_capture.release()
     snd_capture.release()
 
-    fourcc: int = cv.VideoWriter_fourcc(*'XVID')  # Video format
-    out: cv.VideoWriter = cv.VideoWriter('out/out.avi', fourcc, fps, (int(width), int(height)))
+    second_file_name = snd_vid_path.split("/")[-1]
+    out_name = second_file_name.split(".")[0]
+    out_path += ("/" + out_name + " " + str(fst_stitch_frame) + " " + str(snd_stitch_frame) + "/")
+    if not os.path.isdir(out_path):
+        os.mkdir(out_path)
 
-    print("stitching...")
+    fourcc: int = cv.VideoWriter_fourcc(*'mp4v')  # Video format
+    out: cv.VideoWriter = cv.VideoWriter(out_path + out_name + '.mp4',
+                                         fourcc, fps, (int(width), int(height)), True)
+
+    print("Stitching...")
     for frame in fst_vid:
         out.write(frame)
 
@@ -38,9 +48,41 @@ def stitch_videos(fst_vid_path: str, snd_vid_path: str,
 
     out.release()
 
+    print("Saving images...")
+
+    fst_image = fst_vid[-1]
+    snd_image = snd_vid[0]
+    fst_image = cv.cvtColor(fst_image, cv.COLOR_BGR2GRAY)
+    snd_image = cv.cvtColor(snd_image, cv.COLOR_BGR2GRAY)
+
+    (score, diff_s_image) = compare_ssim(fst_image, snd_image, full=True, multichannel=False)
+
+    diff_s_image = diff_s_image ** 2  # squared for visibility
+    diff_s_image = (diff_s_image * 255).astype("uint8")
+    # diff_s_image = cv.threshold(diff_s_image, 0, 255, cv.THRESH_BINARY_INV + cv.THRESH_OTSU)[1]
+
+    diff_image = np.invert(np.abs(fst_image - snd_image))  # Inverted for easy comparing with SSIM
+
+    cv.imwrite(out_path + "first.jpg", fst_image)
+    cv.imwrite(out_path + "second.jpg", snd_image)
+    cv.imwrite(out_path + "diff_abs.jpg", diff_image)
+    cv.imwrite(out_path + "diff_ssim.jpg", diff_s_image)
+
     print("Done!")
 
 
-stitch_videos("G:/Camera/Video/Garage_1_1.mp4", "G:/Camera/Video/Garage_1_2.mp4", 357, 136, 5, 5)
+out_dir = "out/"
 
-#stitch_videos("Test/red_frame_test_1.avi", "Test/red_frame_test_2.avi", 485, 15, 5, 5)
+# first_file = "Test/red_frame_test_1.avi"
+# second_file = "Test/red_frame_test_2.avi"
+# first_time = 485
+# second_time = 15
+
+first_file = "C:/360/Out/road_1-1.mp4"
+second_file = "C:/360/Out/road_1-2.mp4"
+first_time = 472
+second_time = 115
+
+
+stitch_videos(first_file, second_file, out_dir, first_time, second_time, 5, 5)
+
