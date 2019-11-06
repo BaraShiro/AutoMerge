@@ -35,18 +35,18 @@ def stitch_videos(fst_vid_path: str, snd_vid_path: str, out_path: str,
     if not os.path.isdir(out_path):
         os.mkdir(out_path)
 
-    # fourcc: int = cv.VideoWriter_fourcc(*'mp4v')  # Video format
-    # out: cv.VideoWriter = cv.VideoWriter(out_path + out_name + '.mp4',
-    #                                      fourcc, fps, (int(width), int(height)), True)
+    fourcc: int = cv.VideoWriter_fourcc(*'mp4v')  # Video format
+    out: cv.VideoWriter = cv.VideoWriter(out_path + out_name + '.mp4',
+                                         fourcc, fps, (int(width), int(height)), True)
 
-    # print("Stitching...")
-    # for frame in fst_vid:
-    #     out.write(frame)
-    #
-    # for frame in snd_vid:
-    #     out.write(frame)
-    #
-    # out.release()
+    print("Stitching...")
+    for frame in fst_vid:
+        out.write(frame)
+
+    for frame in snd_vid:
+        out.write(frame)
+
+    out.release()
 
     print("Saving images...")
 
@@ -81,12 +81,12 @@ out_dir = "out/"
 # first_time = 485
 # second_time = 15
 
-first_file = "C:/360/Out/forest_2-1.mp4"
-second_file = "C:/360/Out/forest_2-3.mp4"
+first_file = "C:/360/Out/road_2-1.mp4"
+second_file = "C:/360/Out/road_2-2.mp4"
 # first_file = "G:/Camera/Video/Resolve/Path_2-1.mp4"
 # second_file = "G:/Camera/Video/Resolve/Path_2-2.mp4"
-first_time = 337
-second_time = 87
+first_time = 397
+second_time = 46
 
 
 stitch_videos(first_file, second_file, out_dir, first_time, second_time, 5, 5)
