@@ -19,8 +19,10 @@ def resize_image(image: np.ndarray, new_height: int = 480) -> np.ndarray:
     new_width: int = int(width * scale)
     new_image: np.ndarray = resize(image, (new_height, new_width), anti_aliasing=True)
     with warnings.catch_warnings():
-        warnings.simplefilter("ignore")         # Don't warn about loss of precision
-        new_image = img_as_ubyte(new_image)     # resize() returns dtype float64, so convert back to uint8
+        # Don't warn about loss of precision
+        warnings.simplefilter("ignore")
+        # resize() returns dtype float64, so convert back to uint8
+        new_image = img_as_ubyte(new_image)
     return new_image
 
 
@@ -29,9 +31,11 @@ def get_frames(start: int, number_of_frames_to_read: int, video: cv.VideoCapture
                multichannel: bool = True, downscale: bool = False, verbose: int = 0) -> List[np.ndarray]:
     # Init variables
     out: List[np.ndarray] = []
-    video.set(cv.CAP_PROP_POS_FRAMES, start)  # Jump to start frame
+    # Jump to start frame
+    video.set(cv.CAP_PROP_POS_FRAMES, start)
 
-    # Read frames from the file, if reading the frame is successful append it to the list, else stop reading frames
+    # Read frames from the file,
+    # if reading the frame is successful append it to the list, else stop reading frames
     for x in range(number_of_frames_to_read):
         success, frame = video.read()
         if success:
@@ -47,10 +51,12 @@ def get_frames(start: int, number_of_frames_to_read: int, video: cv.VideoCapture
             break
 
     if downscale:
-
-        number_of_jobs: int = os.cpu_count()  # Try to set number of jobs to the number of available CPUs.
-        if not number_of_jobs:  # If os.cpu_count() failed and returned None,
-            number_of_jobs = 4  # default to 4 jobs, as that's good enough
+        # Try to set number of jobs to the number of available CPUs.
+        # If os.cpu_count() failed and returned None,
+        # default to 4 jobs, as that's good enough
+        number_of_jobs: int = os.cpu_count()
+        if not number_of_jobs:
+            number_of_jobs = 4
 
         if verbose >= 1:
             print("Resizing", number_of_frames_to_read, "frames, using", number_of_jobs, "threads...")
@@ -161,7 +167,8 @@ def run_psnr(lead_frame: np.ndarray, following_frame: np.ndarray,
 def run_ssim(lead_frame: np.ndarray, following_frame: np.ndarray,
              lead_frame_number: int, following_frame_number: int, multichannel: bool = True) -> Tuple[int, int, float]:
     score: float = compare_ssim(lead_frame, following_frame, multichannel=multichannel,
-                                gaussian_weights=True, use_sample_covariance=False, sigma=1.5)  # Match the implementation of Wang et. al.
+                                # Set arguments to match the implementation of Wang et. al.
+                                gaussian_weights=True, use_sample_covariance=False, sigma=1.5)
     return lead_frame_number, following_frame_number, score
 
 
