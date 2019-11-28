@@ -120,7 +120,7 @@ def find_matching_frames(lead_vid_path: str, following_vids_paths: List[str], se
         if not capture.isOpened():
             print("Error opening video file at", path)
             print("Make sure it exists, is a valid video file, and appropriate codecs are installed.")
-            return None
+            return None  # TODO: Maybe not the best way to handle this, consider making following_vids [] instead
 
         fps: int = int(capture.get(cv.CAP_PROP_FPS))
         number_of_frames_to_read: int = fps * seconds
