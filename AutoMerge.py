@@ -132,7 +132,7 @@ def get_frames(start: int, number_of_frames_to_read: int, video: cv.VideoCapture
 
 def find_matching_frames(lead_vid_path: str, following_vids_paths: List[str], seconds: int,
                          multichannel: bool = True, downscale: bool = False,
-                         method: str = 'mse', verbose: int = 0) -> Union[List[Tuple[int, int, float]], None]:
+                         method: str = 'mse', verbose: int = 0) -> Union[List[Union[Tuple[int, int, float], None]], None]:
     """Finds the most similar frames in two videos.
 
     Searches the frames in the last seconds of the lead video
@@ -160,10 +160,11 @@ def find_matching_frames(lead_vid_path: str, following_vids_paths: List[str], se
                  verbose >= 3 prints detailed processing.
 
     Returns:
-        A list of int, int, float tuples, where each tuple is the result of
-        a search on the leading viudeo and opne of the following videos,
-        an the ints are the found frames and the float the similarity score.
-        Or None if a video could not be opened.
+        A list of int, int, float tuples or Nones, where each tuple or None is the result of
+        a search on the leading video and one of the following videos,
+        where the ints are the found frames and the float the similarity score,
+        and a None means a following video could not be opened.
+        Or None if the leading video could not be opened.
     """
 
     if verbose >= 1:
@@ -210,24 +211,27 @@ def find_matching_frames(lead_vid_path: str, following_vids_paths: List[str], se
         if not capture.isOpened():
             print("Error opening video file at", path)
             print("Make sure it exists, is a valid video file, and appropriate codecs are installed.")
-            return None  # TODO: Maybe not the best way to handle this, consider appending [] to following_vids instead
+            following_vids.append([])
+        else:
+            fps: int = int(capture.get(cv.CAP_PROP_FPS))
+            number_of_frames_to_read: int = fps * seconds
 
-        fps: int = int(capture.get(cv.CAP_PROP_FPS))
-        number_of_frames_to_read: int = fps * seconds
+            if verbose >= 1:
+                print("Getting", number_of_frames_to_read, "following frames...")
 
-        if verbose >= 1:
-            print("Getting", number_of_frames_to_read, "following frames...")
-
-        following_vids.append(get_frames(0, number_of_frames_to_read, capture, multichannel, downscale, verbose))
-        capture.release()
+            following_vids.append(get_frames(0, number_of_frames_to_read, capture, multichannel, downscale, verbose))
+            capture.release()
 
     # Calculate most similar frames
     out: List[Tuple[int, int, float]] = []
     for following_vid in following_vids:
-        most_similar_frames: Tuple[int, int, float] = get_most_similar_frames(lead_vid, following_vid,
-                                                                              lead_vid_start, multichannel,
-                                                                              method, verbose)
-        out.append(most_similar_frames)
+        if following_vid:
+            most_similar_frames: Tuple[int, int, float] = get_most_similar_frames(lead_vid, following_vid,
+                                                                                  lead_vid_start, multichannel,
+                                                                                  method, verbose)
+            out.append(most_similar_frames)
+        else:
+            out.append(None)
 
     end: float = time.time()
     if verbose >= 2:
