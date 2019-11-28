@@ -42,6 +42,8 @@ def get_frames(start: int, number_of_frames_to_read: int, video: cv.VideoCapture
                 out.append(cv.cvtColor(frame, cv.COLOR_BGR2GRAY))
 
         else:
+            if verbose >= 1:
+                print("Not enough frames in video after frame number", start, "only", len(out), "frames read.")
             break
 
     if downscale:
