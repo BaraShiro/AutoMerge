@@ -108,7 +108,7 @@ def get_frames(start: int, number_of_frames_to_read: int, video: cv.VideoCapture
 
         else:
             if verbose >= 1:
-                print("Not enough frames in video after frame number", start, "only", len(out), "frames read.")
+                print("Only", len(out), "frames read, not enough frames in video after frame number", start)
             break
 
     if downscale:
@@ -120,7 +120,7 @@ def get_frames(start: int, number_of_frames_to_read: int, video: cv.VideoCapture
             number_of_jobs = 4
 
         if verbose >= 1:
-            print("Resizing", number_of_frames_to_read, "frames, using", number_of_jobs, "threads...")
+            print("Resizing", len(out), "frames, using", number_of_jobs, "threads...")
 
         with Parallel(n_jobs=number_of_jobs, prefer="threads") as parallel:
             resized_out = (parallel(delayed(resize_image)(frame, 480) for frame in out))
