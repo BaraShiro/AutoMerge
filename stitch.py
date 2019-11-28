@@ -7,24 +7,16 @@ from AutoMerge import get_frames, resize_image
 from skimage.measure import compare_ssim
 
 
-@click.command()
-@click.option("--lead-file", "-l", "fst_vid_path", required=True,
-              type=click.Path(exists=True, readable=True),
-              help="Path to leading video file.")
-@click.option("--follow-file", "-f", "snd_vid_path", required=True,
-              type=click.Path(exists=True, readable=True),
-              help="Path to following video file.")
-@click.option("--out-dir", "-o", "out_path", required=True,
-              type=click.Path(dir_okay=True),
-              help="Path to out dir.")
-@click.option("--lead-frame", "-x", "fst_stitch_frame", required=True, type=int,
-              help="Frame from lead video to cut from.")
-@click.option("--follow-frame", "-y", "snd_stitch_frame", required=True, type=int,
-              help="Frame from following video to cut from.")
-@click.option("--lead-len", "-z", "fst_seconds", type=int,
-              help="Number of seconds from lead video.")
-@click.option("--follow-len", "-w", "snd_seconds", type=int,
-              help="Number of seconds from following video.")
+@click.command(context_settings={"ignore_unknown_options": True})
+@click.argument("fst_vid_path", type=click.Path(exists=True, readable=True))
+@click.argument("snd_vid_path", type=click.Path(exists=True, readable=True))
+@click.argument("out_path", type=click.Path(dir_okay=True))
+@click.argument("fst_stitch_frame", type=click.IntRange(min=0, max=None, clamp=False))
+@click.argument("snd_stitch_frame", type=click.IntRange(min=0, max=None, clamp=False))
+@click.option("--lead-len", "-l", "fst_seconds", type=click.IntRange(min=1, max=None, clamp=False),
+              help="Number of seconds from lead video, has to be greater than 0.")
+@click.option("--follow-len", "-f", "snd_seconds", type=click.IntRange(min=1, max=None, clamp=False),
+              help="Number of seconds from following video, has to be greater than 0.")
 def stitch_videos(fst_vid_path: str, snd_vid_path: str, out_path: str,
                   fst_stitch_frame: int, snd_stitch_frame: int,
                   fst_seconds: int = 5, snd_seconds: int = 5) -> None:
@@ -50,15 +42,16 @@ def stitch_videos(fst_vid_path: str, snd_vid_path: str, out_path: str,
     second_file_dir, second_file_name = os.path.split(snd_vid_path)
     # second_file_name = snd_vid_path.split("/")[-1]
     out_name = str(second_file_name.split(".")[0])
-    print(snd_vid_path, second_file_name, out_name)
+    # print(snd_vid_path, second_file_name, out_name)
     # out_path += ("/" + out_name + " " + str(fst_stitch_frame) + " " + str(snd_stitch_frame) + "/")
     out_dir_name = (out_name + " " + str(fst_stitch_frame) + " " + str(snd_stitch_frame))
     full_out_path = os.path.join(out_path, out_dir_name)
-    if not os.path.isdir(full_out_path):
-        os.mkdir(full_out_path)
+    # if not os.path.isdir(full_out_path):
+    #     os.mkdir(full_out_path)
+    os.makedirs(full_out_path, exist_ok=True)
 
     fourcc: int = cv.VideoWriter_fourcc(*'mp4v')  # Video format
-    print(os.path.join(full_out_path, (out_name + '.mp4')))
+    # print(os.path.join(full_out_path, (out_name + '.mp4')))
     out: cv.VideoWriter = cv.VideoWriter(os.path.join(full_out_path, (out_name + '.mp4')),
                                          fourcc, fps, (int(width), int(height)), True)
 
