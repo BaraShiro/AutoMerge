@@ -1,3 +1,15 @@
+"""Searches and returns the best matching frames in two video files.
+
+Given a leading video and a list of following videos, searches the end
+of the leading and the beginning of the following  videos using one of four
+image similarity metrics, MSE, NRMSE, PSNR, SSIM.
+
+  Typical usage example:
+
+  best_matching_frame = find_matching_frames("path/to/vid1.avi", ["path/to/vid2.avi", "path/to/vid3.avi"],
+                                              seconds=3, multichannel=False, downscale=True,
+                                              method="mse", verbose=3)
+"""
 import os
 from typing import *
 import numpy as np
@@ -11,8 +23,24 @@ import datetime
 from joblib import Parallel, delayed
 
 
-# Resizes an image to the new height, keeping the aspect ratio
 def resize_image(image: np.ndarray, new_height: int = 480) -> np.ndarray:
+    """Resizes an image to the new height, keeping the aspect ratio.
+
+    Resizes image, giving it a new height of new_height and a new width scaled
+    accordingly to original aspect ratio, and converts it to uint8.
+    Defaults to a new height of 480 pixels.
+
+    Args:
+        image: An images as an ndarray array.
+        new_height: An optional variable that controls the height images is resized to.
+
+    Returns:
+        A resized version of image as an ndarray array with dtype uint8.
+
+    Notes:
+        Warning about precision loss is suppressed, but suppression might not always work.
+    """
+
     height: int = image.shape[0]
     width: int = image.shape[1]
     scale: float = new_height / height
@@ -26,10 +54,43 @@ def resize_image(image: np.ndarray, new_height: int = 480) -> np.ndarray:
     return new_image
 
 
-# Gets frames from start to end from video at filepath and returns the in a list
 def get_frames(start: int, number_of_frames_to_read: int, video: cv.VideoCapture,
                multichannel: bool = True, downscale: bool = False, verbose: int = 0) -> List[np.ndarray]:
-    # Init variables
+    """Gets frames from video and returns them in a list.
+
+    Gets number_of_frames_to_read number of frames starting from start
+    from video and returns them in a list.
+    The frames can be in colour or greyscale, and can optionally be downscaled to 480p.
+    Can print detailed information on the process.
+
+    Args:
+        start: An int representing the frame number to start from.
+        number_of_frames_to_read: An int representing the number of frames to read.
+        video: An open OpenCV video capture to read frames from.
+        multichannel: A bool for selecting to extract colour or greyscale frames.
+        downscale: A bool for selecting to downscale extracted frames to 480p.
+        verbose: An int controlling the printing of detailed information.
+                 If verbose >= 1 and downscale == True,
+                 the function prints how many frames are being resized and
+                 how many threads are used to do the work.
+                 If verbose >= 1 the function prints a notice
+                 if the number of frames available after start is lower than
+                 number_of_frames_to_read.
+
+    Returns:
+        A list of ndarrays with length equal to number_of_frames_to_read,
+        containing frames from video, starting from frame number start.
+        If the number of available frames after start is lower than
+        number_of_frames_to_read the returned list will only contain so
+        many frames as is available. If verbose is grater tha or equal to 1,
+        a notice about this is printed.
+
+    Notes:
+        Uses at least 4 threads, but as most as many as the number of
+        available logical processors, to resize images if downscale is enabled.
+    """
+
+    # Init return variable
     out: List[np.ndarray] = []
     # Jump to start frame
     video.set(cv.CAP_PROP_POS_FRAMES, start)
@@ -69,12 +130,41 @@ def get_frames(start: int, number_of_frames_to_read: int, video: cv.VideoCapture
         return out
 
 
-# Finds the most similar frames in the end of the lead vid and the beginning of the following vid
-# Verbose: 0 = nothing, 1 = stage of operation, 2 = threading and time, 3 = detailed processing
-# Returns None if video file cannot be opened
 def find_matching_frames(lead_vid_path: str, following_vids_paths: List[str], seconds: int,
                          multichannel: bool = True, downscale: bool = False,
                          method: str = 'mse', verbose: int = 0) -> Union[List[Tuple[int, int, float]], None]:
+    """Finds the most similar frames in two videos.
+
+    Searches the frames in the last seconds of the lead video
+    and the first seconds of each of the following videos.
+    The search can be made with four different methods (mse, nrmse, psnr, or ssim),
+    in colour or greyscale, and with full resolution or downscaled resolution.
+
+    Args:
+        lead_vid_path: AString representing a path to the leading video file.
+        following_vids_paths: A list of stings representing paths
+        to the following video files.
+        seconds: An int representing the number of seconds to search.
+        multichannel: A bool for selecting to extract colour or greyscale frames.
+        downscale: A bool for selecting to downscale extracted frames to 480p.
+        method: A sting representing the image similarity method to use, valid values are:
+                'mse': Mean squared error,
+                'nrmse': Normalised root mean squared error,
+                'psnr': peak signal-to-noise ratio,
+                'ssim': Structural similarity measure.
+                Defaults to 'mse'.
+        verbose: An int controlling the printing of detailed information:
+                 verbose <= 0 prints nothing,
+                 verbose >= 1 prints stage of operation,
+                 verbose >= 2 prints threading and time,
+                 verbose >= 3 prints detailed processing.
+
+    Returns:
+        A list of int, int, float tuples, where each tuple is the result of
+        a search on the leading viudeo and opne of the following videos,
+        an the ints are the found frames and the float the similarity score.
+        Or None if a video could not be opened.
+    """
 
     if verbose >= 1:
         arg_message = "Processing " + str(seconds) + " seconds. Using " + method.upper()
@@ -146,24 +236,28 @@ def find_matching_frames(lead_vid_path: str, following_vids_paths: List[str], se
     return out
 
 
+# Wrapper for skimage.compare.compare_mse().
 def run_mse(lead_frame: np.ndarray, following_frame: np.ndarray,
             lead_frame_number: int, following_frame_number: int) -> Tuple[int, int, float]:
     score: float = compare_mse(lead_frame, following_frame)
     return lead_frame_number, following_frame_number, score
 
 
+# Wrapper for skimage.compare.compare_nrmse().
 def run_nrmse(lead_frame: np.ndarray, following_frame: np.ndarray,
               lead_frame_number: int, following_frame_number: int) -> Tuple[int, int, float]:
     score: float = compare_nrmse(lead_frame, following_frame, norm_type="min-max")
     return lead_frame_number, following_frame_number, score
 
 
+# Wrapper for skimage.compare.compare_psnr().
 def run_psnr(lead_frame: np.ndarray, following_frame: np.ndarray,
              lead_frame_number: int, following_frame_number: int) -> Tuple[int, int, float]:
     score: float = compare_psnr(lead_frame, following_frame)
     return lead_frame_number, following_frame_number, score
 
 
+# Wrapper for skimage.compare.compare_ssim().
 def run_ssim(lead_frame: np.ndarray, following_frame: np.ndarray,
              lead_frame_number: int, following_frame_number: int, multichannel: bool = True) -> Tuple[int, int, float]:
     score: float = compare_ssim(lead_frame, following_frame, multichannel=multichannel,
@@ -175,10 +269,40 @@ def run_ssim(lead_frame: np.ndarray, following_frame: np.ndarray,
 def get_most_similar_frames(lead_vid: List[np.ndarray], following_vid: List[np.ndarray],
                             offset: int, multichannel: bool = True, method: str = 'mse',
                             verbose: int = 0) -> (int, int, float):
+    """Gets the most similar frames from two lists of frames.
 
-    number_of_jobs: int = os.cpu_count()    # Try to set number of jobs to the number of available CPUs.
-    if not number_of_jobs:                  # If os.cpu_count() failed and returned None,
-        number_of_jobs = 4                  # default to 4 jobs, as that's good enough
+    Searches lead_vid and following_vid for the most similar frames
+    using the method specified in method.
+
+    Args:
+        lead_vid: A list of ndarrays representing frames from the leading video
+        following_vid: A list of ndarrays representing frames from the following video
+        offset: An int representing the offset of the leading frames in the leading video,
+                used to return the correct frame number for the leading video.
+        multichannel: A bool specifying if the frames are in colour or greyscale,
+                      passed to the SSIM function for it to function correctly.
+        method: A sting representing the image similarity method to use, valid values are:
+                'mse': Mean squared error,
+                'nrmse': Normalised root mean squared error,
+                'psnr': peak signal-to-noise ratio,
+                'ssim': Structural similarity measure.
+                Defaults to 'mse'.
+        verbose: An int controlling the printing of detailed information:
+                 verbose <= 1 prints nothing,
+                 verbose >= 2 prints how many frames are being processed and how many thread used,
+                 verbose >= 3 prints which out of how many frames are being processed.
+
+    Returns:
+        An tuple with two ints representing the frame numbers of the two most similar frames,
+        and a  float representing the similarity score.
+    """
+
+    # Try to set number of jobs to the number of available CPUs.
+    # If os.cpu_count() failed and returned None,
+    # default to 4 jobs, as that's good enough.
+    number_of_jobs: int = os.cpu_count()
+    if not number_of_jobs:
+        number_of_jobs = 4
 
     if verbose >= 2:
         print("Processing", len(lead_vid), "frames, using", number_of_jobs, "threads...")
