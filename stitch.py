@@ -1,5 +1,4 @@
 from typing import *
-from valid_pathname import is_pathname_valid
 import click
 import numpy as np
 import cv2 as cv
