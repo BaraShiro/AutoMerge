@@ -12,6 +12,8 @@ image similarity metrics, MSE, NRMSE, PSNR, SSIM.
 """
 import os
 from typing import *
+import click
+from custom_params import PathList, Method
 import numpy as np
 import cv2 as cv
 from skimage.measure import compare_mse, compare_nrmse, compare_psnr, compare_ssim
@@ -129,7 +131,10 @@ def get_frames(start: int, number_of_frames_to_read: int, video: cv.VideoCapture
     else:
         return out
 
-
+# @click.command(context_settings={"ignore_unknown_options": True})
+# @click.argument("lead_vid_path", type=click.Path(exists=True, dir_okay=False, readable=True))
+# @click.argument("following_vids_paths", type=click.Path(exists=True, dir_okay=False, readable=True))
+# @click.argument("seconds", type=click.IntRange(min=0, max=None, clamp=False))
 def find_matching_frames(lead_vid_path: str, following_vids_paths: List[str], seconds: int,
                          multichannel: bool = True, downscale: bool = False,
                          method: str = 'mse', verbose: int = 0) -> Union[List[Union[Tuple[int, int, float], None]], None]:
@@ -370,3 +375,32 @@ def get_most_similar_frames(lead_vid: List[np.ndarray], following_vid: List[np.n
     else:
         print("Invalid method, defaulting to MSE")
         return get_most_similar_frames(lead_vid, following_vid, offset, multichannel, 'mse')
+
+
+@click.command(context_settings={"ignore_unknown_options": True}, options_metavar='<options>')
+@click.argument("lead_vid_path", type=click.Path(exists=True, dir_okay=False, readable=True), metavar='<leading video>')
+@click.argument("following_vids_paths", type=PathList(), metavar='<following videos>')
+@click.argument("seconds", type=click.IntRange(min=1, max=None, clamp=False), metavar='<seconds>')
+@click.argument("method", type=Method(), metavar='<method>')
+@click.option("--verbose", type=click.IntRange(min=0, max=3, clamp=False), default=0,
+              help='0 = nothing, 1 = stage of operation, 2 = threading and time, 3 = detailed processing')
+@click.option('--colour/--greyscale', default=False, help='colour on / off (default off)')
+@click.option('--downscale/--no-downscale', default=True, help='downscale on / off (default on)')
+def driver(lead_vid_path: str, following_vids_paths: List[str], seconds: int,
+           colour, downscale, method: str, verbose: int) -> None:
+    """Finds the best matching frames in the <seconds> last seconds of <leading video>
+    and the <seconds> first seconds of <following videos>, using <methods> as similarity measure.
+
+    <leading video> is the path to the leading video.
+
+    <following videos> is the path or a comma separated list of paths to one or several following videos.
+
+    <seconds> is the number of seconds to search.
+
+    <method> is the similarity measure to use. Valid options are: mse, nrmse, psnr, ssim.
+    """
+    print(find_matching_frames(lead_vid_path, following_vids_paths, seconds, colour, downscale, method, verbose))
+
+
+if __name__ =="__main__":
+    driver()
