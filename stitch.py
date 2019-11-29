@@ -11,14 +11,13 @@ from skimage.measure import compare_ssim
 @click.command(context_settings={"ignore_unknown_options": True})
 @click.argument("fst_vid_path", type=click.Path(exists=True, dir_okay=False, readable=True))
 @click.argument("snd_vid_path", type=click.Path(exists=True, dir_okay=False, readable=True))
-@click.argument("out_path", type=click.Path(dir_okay=True, file_okay=False))
 @click.argument("fst_stitch_frame", type=click.IntRange(min=0, max=None, clamp=False))
 @click.argument("snd_stitch_frame", type=click.IntRange(min=0, max=None, clamp=False))
 @click.option("--lead-len", "-l", "fst_seconds", type=click.IntRange(min=1, max=None, clamp=False),
               help="Number of seconds from lead video, has to be greater than 0.")
 @click.option("--follow-len", "-f", "snd_seconds", type=click.IntRange(min=1, max=None, clamp=False),
               help="Number of seconds from following video, has to be greater than 0.")
-def stitch_videos(fst_vid_path: str, snd_vid_path: str, out_path: str,
+def stitch_videos(fst_vid_path: str, snd_vid_path: str,
                   fst_stitch_frame: int, snd_stitch_frame: int,
                   fst_seconds: int = 5, snd_seconds: int = 5) -> None:
 
@@ -30,7 +29,7 @@ def stitch_videos(fst_vid_path: str, snd_vid_path: str, out_path: str,
     second_file_dir, second_file_name = os.path.split(snd_vid_path)
     file_name, file_type = second_file_name.split(".")
     out_dir_name = (file_name + " " + str(fst_stitch_frame) + " " + str(snd_stitch_frame))
-    full_out_path = os.path.join(out_path, out_dir_name)
+    full_out_path = os.path.join("out", out_dir_name)
     os.makedirs(full_out_path, exist_ok=True)
 
     # Get fps from in-video files
