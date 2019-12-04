@@ -244,21 +244,21 @@ def find_matching_frames(lead_vid_path: str, following_vids_paths: List[str], se
 
 # Wrapper for skimage.measure.compare_mse().
 def run_mse(lead_frame: np.ndarray, following_frame: np.ndarray,
-            lead_frame_number: int, following_frame_number: int) -> Tuple[int, int, float]:
+            lead_frame_number: int, following_frame_number: int, _: bool = True) -> Tuple[int, int, float]:
     score: float = compare_mse(lead_frame, following_frame)
     return lead_frame_number, following_frame_number, score
 
 
 # Wrapper for skimage.measure.compare_nrmse().
 def run_nrmse(lead_frame: np.ndarray, following_frame: np.ndarray,
-              lead_frame_number: int, following_frame_number: int) -> Tuple[int, int, float]:
+              lead_frame_number: int, following_frame_number: int, _: bool = True) -> Tuple[int, int, float]:
     score: float = compare_nrmse(lead_frame, following_frame, norm_type="min-max")
     return lead_frame_number, following_frame_number, score
 
 
 # Wrapper for skimage.measure.compare_psnr().
 def run_psnr(lead_frame: np.ndarray, following_frame: np.ndarray,
-             lead_frame_number: int, following_frame_number: int) -> Tuple[int, int, float]:
+             lead_frame_number: int, following_frame_number: int, _: bool = True) -> Tuple[int, int, float]:
     score: float = compare_psnr(lead_frame, following_frame)
     return lead_frame_number, following_frame_number, score
 
@@ -272,12 +272,76 @@ def run_ssim(lead_frame: np.ndarray, following_frame: np.ndarray,
     return lead_frame_number, following_frame_number, score
 
 
-def compare_frames(lead_vid: List[np.ndarray], following_vid: List[np.ndarray],
-                            offset: int, multichannel: bool = True, method: str = 'mse',
-                            verbose: int = 0) -> (int, int, float):
+def compare_frames(lead_vid: List[np.ndarray], following_vid: List[np.ndarray], lower_is_better: bool,
+                   compare_function: Callable[[np.ndarray, np.ndarray, int, int, bool], Tuple[int, int, float]],
+                   offset: int, multichannel: bool = True, verbose: int = 0) -> (int, int, float):
+    """Compares the frames in two lists of frames, and returns the most similar.
 
-    
-    return None
+    Searches lead_vid and following_vid for the most similar frames
+    using the compare function passed in compare_function and
+    initial_value as the starting best score.
+
+    Args:
+        lead_vid: A list of ndarrays representing frames from the leading video
+        following_vid: A list of ndarrays representing frames from the following video
+        offset: An int representing the offset of the leading frames in the leading video,
+                used to return the correct frame number for the leading video.
+        lower_is_better: A bool indicating if lower scores are better or worse.
+        compare_function: A function that compares frames and returns their similarity score and their numbers.
+        multichannel: A bool specifying if the frames are in colour or greyscale,
+                      passed to the SSIM function for it to function correctly.
+        verbose: An int controlling the printing of detailed information:
+                 verbose <= 1 prints nothing,
+                 verbose >= 2 prints how many frames are being processed and how many thread used,
+                 verbose >= 3 prints which out of how many frames are being processed.
+
+    Returns:
+        An tuple with two ints representing the frame numbers of the two most similar frames,
+        and a  float representing the similarity score.
+    """
+
+    # Try to set number of jobs to the number of available CPUs.
+    # If os.cpu_count() failed and returned None,
+    # default to 4 jobs, as that's good enough.
+    number_of_jobs: int = os.cpu_count()
+    if not number_of_jobs:
+        number_of_jobs = 4
+
+    # If lower scores are better define better score as less than,
+    # best score in list as min, and initial value as infinity
+    if lower_is_better:
+        def new_score_is_better(new: float, old: float) -> bool:
+            return new < old
+
+        get_best_score_in_list: Callable[[List[Tuple[int, int, float]]], Tuple[int, int, float]] = min
+        initial_value: float = float('inf')
+
+    # If higher scores are better define better score as greater than,
+    # best score in list as max, and initial value to negative infinity.
+    else:
+        def new_score_is_better(new: float, old: float) -> bool:
+            return new > old
+
+        get_best_score_in_list: Callable[[List[Tuple[int, int, float]]], Tuple[int, int, float]] = max
+        initial_value: float = float('-inf')
+
+    if verbose >= 2:
+        print("Processing", len(lead_vid), "frames, using", number_of_jobs, "threads...")
+
+    best_score: Tuple[int, int, float] = (0, 0, initial_value)
+    with Parallel(n_jobs=number_of_jobs, prefer="threads") as parallel:
+        for i, lead_frame in enumerate(lead_vid):
+            if verbose >= 3:
+                print("Processing frame", i + 1, "of", len(lead_vid))
+            score_list: List[Tuple[int, int, float]] = (parallel(delayed(compare_function)
+                                                                 (lead_frame, following_frame, i + offset, j,
+                                                                  multichannel)
+                                                                 for j, following_frame in enumerate(following_vid)))
+            new_score: Tuple[int, int, float] = get_best_score_in_list(score_list, key=lambda score: score[2])
+            if new_score_is_better(new_score[2], best_score[2]):
+                best_score = new_score
+
+    return best_score
 
 
 def get_most_similar_frames(lead_vid: List[np.ndarray], following_vid: List[np.ndarray],
@@ -311,71 +375,17 @@ def get_most_similar_frames(lead_vid: List[np.ndarray], following_vid: List[np.n
         and a  float representing the similarity score.
     """
 
-    # Try to set number of jobs to the number of available CPUs.
-    # If os.cpu_count() failed and returned None,
-    # default to 4 jobs, as that's good enough.
-    number_of_jobs: int = os.cpu_count()
-    if not number_of_jobs:
-        number_of_jobs = 4
-
-    if verbose >= 2:
-        print("Processing", len(lead_vid), "frames, using", number_of_jobs, "threads...")
-
     if method == 'mse':
-        min_diff: Tuple[int, int, float] = (0, 0, float('inf'))
-        with Parallel(n_jobs=number_of_jobs, prefer="threads") as parallel:
-            for i, lead_frame in enumerate(lead_vid):
-                if verbose >= 3:
-                    print("Processing frame", i + 1, "of", len(lead_vid))
-                diff_list: List[Tuple[int, int, float]] = (parallel(delayed(run_mse)(lead_frame, following_frame, i + offset, j)
-                                                                    for j, following_frame in enumerate(following_vid)))
-                diff: Tuple[int, int, float] = min(diff_list, key=lambda diff_tuple: diff_tuple[2])
-                if diff[2] < min_diff[2]:
-                    min_diff = diff
-
-        return min_diff
+        return compare_frames(lead_vid, following_vid, True, run_mse, offset, multichannel, verbose)
 
     elif method == 'nrmse':
-        min_diff: Tuple[int, int, float] = (0, 0, float('inf'))
-        with Parallel(n_jobs=number_of_jobs, prefer="threads") as parallel:
-            for i, lead_frame in enumerate(lead_vid):
-                if verbose >= 3:
-                    print("Processing frame", i + 1, "of", len(lead_vid))
-                diff_list: List[Tuple[int, int, float]] = (parallel(delayed(run_nrmse)(lead_frame, following_frame, i + offset, j)
-                                                                    for j, following_frame in enumerate(following_vid)))
-                diff: Tuple[int, int, float] = min(diff_list, key=lambda diff_tuple: diff_tuple[2])
-                if diff[2] < min_diff[2]:
-                    min_diff = diff
-
-        return min_diff
+        return compare_frames(lead_vid, following_vid, True, run_nrmse, offset, multichannel, verbose)
 
     elif method == 'psnr':
-        min_diff: Tuple[int, int, float] = (0, 0, float('-inf'))
-        with Parallel(n_jobs=number_of_jobs, prefer="threads") as parallel:
-            for i, lead_frame in enumerate(lead_vid):
-                if verbose >= 3:
-                    print("Processing frame", i + 1, "of", len(lead_vid))
-                diff_list: List[Tuple[int, int, float]] = (parallel(delayed(run_psnr)(lead_frame, following_frame, i + offset, j)
-                                                                    for j, following_frame in enumerate(following_vid)))
-                diff: Tuple[int, int, float] = max(diff_list, key=lambda diff_tuple: diff_tuple[2])
-                if diff[2] > min_diff[2]:
-                    min_diff = diff
-
-        return min_diff
+        return compare_frames(lead_vid, following_vid, False, run_psnr, offset, multichannel, verbose)
 
     elif method == 'ssim':
-        min_diff: Tuple[int, int, float] = (0, 0, float('-inf'))
-        with Parallel(n_jobs=number_of_jobs, prefer="threads") as parallel:
-            for i, lead_frame in enumerate(lead_vid):
-                if verbose >= 3:
-                    print("Processing frame", i + 1, "of", len(lead_vid))
-                diff_list: List[Tuple[int, int, float]] = (parallel(delayed(run_ssim)(lead_frame, following_frame, i + offset, j, multichannel=multichannel)
-                                                                    for j, following_frame in enumerate(following_vid)))
-                diff: Tuple[int, int, float] = max(diff_list, key=lambda diff_tuple: diff_tuple[2])
-                if diff[2] > min_diff[2]:
-                    min_diff = diff
-
-        return min_diff
+        return compare_frames(lead_vid, following_vid, False, run_ssim, offset, multichannel, verbose)
 
     else:
         print("Invalid method, defaulting to MSE")
