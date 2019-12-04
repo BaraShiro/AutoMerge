@@ -272,6 +272,14 @@ def run_ssim(lead_frame: np.ndarray, following_frame: np.ndarray,
     return lead_frame_number, following_frame_number, score
 
 
+def compare_frames(lead_vid: List[np.ndarray], following_vid: List[np.ndarray],
+                            offset: int, multichannel: bool = True, method: str = 'mse',
+                            verbose: int = 0) -> (int, int, float):
+
+    
+    return None
+
+
 def get_most_similar_frames(lead_vid: List[np.ndarray], following_vid: List[np.ndarray],
                             offset: int, multichannel: bool = True, method: str = 'mse',
                             verbose: int = 0) -> (int, int, float):
