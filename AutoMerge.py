@@ -131,10 +131,7 @@ def get_frames(start: int, number_of_frames_to_read: int, video: cv.VideoCapture
     else:
         return out
 
-# @click.command(context_settings={"ignore_unknown_options": True})
-# @click.argument("lead_vid_path", type=click.Path(exists=True, dir_okay=False, readable=True))
-# @click.argument("following_vids_paths", type=click.Path(exists=True, dir_okay=False, readable=True))
-# @click.argument("seconds", type=click.IntRange(min=0, max=None, clamp=False))
+
 def find_matching_frames(lead_vid_path: str, following_vids_paths: List[str], seconds: int,
                          multichannel: bool = True, downscale: bool = False,
                          method: str = 'mse', verbose: int = 0) -> Union[List[Union[Tuple[int, int, float], None]], None]:
