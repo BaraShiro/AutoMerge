@@ -6,7 +6,7 @@ image similarity metrics, MSE, NRMSE, PSNR, SSIM.
 
   Typical usage example:
 
-  best_matching_frame = find_matching_frames("path/to/vid1.avi", ["path/to/vid2.avi", "path/to/vid3.avi"],
+  best_matching_frames = find_matching_frames("path/to/vid1.avi", ["path/to/vid2.avi", "path/to/vid3.avi"],
                                               seconds=3, multichannel=False, downscale=True,
                                               method="mse", verbose=3)
 """
@@ -245,28 +245,28 @@ def find_matching_frames(lead_vid_path: str, following_vids_paths: List[str], se
     return out
 
 
-# Wrapper for skimage.compare.compare_mse().
+# Wrapper for skimage.measure.compare_mse().
 def run_mse(lead_frame: np.ndarray, following_frame: np.ndarray,
             lead_frame_number: int, following_frame_number: int) -> Tuple[int, int, float]:
     score: float = compare_mse(lead_frame, following_frame)
     return lead_frame_number, following_frame_number, score
 
 
-# Wrapper for skimage.compare.compare_nrmse().
+# Wrapper for skimage.measure.compare_nrmse().
 def run_nrmse(lead_frame: np.ndarray, following_frame: np.ndarray,
               lead_frame_number: int, following_frame_number: int) -> Tuple[int, int, float]:
     score: float = compare_nrmse(lead_frame, following_frame, norm_type="min-max")
     return lead_frame_number, following_frame_number, score
 
 
-# Wrapper for skimage.compare.compare_psnr().
+# Wrapper for skimage.measure.compare_psnr().
 def run_psnr(lead_frame: np.ndarray, following_frame: np.ndarray,
              lead_frame_number: int, following_frame_number: int) -> Tuple[int, int, float]:
     score: float = compare_psnr(lead_frame, following_frame)
     return lead_frame_number, following_frame_number, score
 
 
-# Wrapper for skimage.compare.compare_ssim().
+# Wrapper for skimage.measure.compare_ssim().
 def run_ssim(lead_frame: np.ndarray, following_frame: np.ndarray,
              lead_frame_number: int, following_frame_number: int, multichannel: bool = True) -> Tuple[int, int, float]:
     score: float = compare_ssim(lead_frame, following_frame, multichannel=multichannel,
@@ -402,5 +402,5 @@ def driver(lead_vid_path: str, following_vids_paths: List[str], seconds: int,
     print(find_matching_frames(lead_vid_path, following_vids_paths, seconds, colour, downscale, method, verbose))
 
 
-if __name__ =="__main__":
+if __name__ == "__main__":
     driver()
