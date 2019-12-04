@@ -133,8 +133,8 @@ def get_frames(start: int, number_of_frames_to_read: int, video: cv.VideoCapture
 
 
 def find_matching_frames(lead_vid_path: str, following_vids_paths: List[str], seconds: int,
-                         multichannel: bool = True, downscale: bool = False,
-                         method: str = 'mse', verbose: int = 0) -> Union[List[Union[Tuple[int, int, float], None]], None]:
+                         multichannel: bool = True, downscale: bool = False, method: str = 'mse',
+                         verbose: int = 0) -> Union[List[Union[Tuple[int, int, float], None]], None]:
     """Finds the most similar frames in two videos.
 
     Searches the frames in the last seconds of the lead video
@@ -202,7 +202,8 @@ def find_matching_frames(lead_vid_path: str, following_vids_paths: List[str], se
     if verbose >= 1:
         print("Getting", number_of_frames_to_read, "leading frames...")
 
-    lead_vid: List[np.ndarray] = get_frames(lead_vid_start, number_of_frames_to_read, capture, multichannel, downscale, verbose)
+    lead_vid: List[np.ndarray] = get_frames(lead_vid_start, number_of_frames_to_read, capture,
+                                            multichannel, downscale, verbose)
     capture.release()
 
     # Get following videos
@@ -225,7 +226,7 @@ def find_matching_frames(lead_vid_path: str, following_vids_paths: List[str], se
             capture.release()
 
     # Calculate most similar frames
-    out: List[Tuple[int, int, float]] = []
+    out: List[Union[Tuple[int, int, float], None]] = []
     for following_vid in following_vids:
         if following_vid:
             most_similar_frames: Tuple[int, int, float] = get_most_similar_frames(lead_vid, following_vid,
