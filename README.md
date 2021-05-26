@@ -36,3 +36,5 @@ Finds the best matching frames in the `{seconds}` last seconds of `{leading vide
 ## GUI
 
 Alternatively the GUI can be used by running `GUI.py`. The GUI will always run with `{verbose}` set to 3.
+
+![AutomergeScreenshot](https://user-images.githubusercontent.com/17293533/119658919-f5b4ba80-be2d-11eb-8250-5ede3fcad58d.png)
